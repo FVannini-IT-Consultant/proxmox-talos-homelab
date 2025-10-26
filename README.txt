@@ -1,0 +1,1 @@
+https://olav.ninja/talos-cluster-on-proxmox-with-terraform
