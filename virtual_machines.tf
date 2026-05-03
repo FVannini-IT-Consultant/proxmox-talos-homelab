@@ -3,6 +3,7 @@ locals {
 }
 
 resource "proxmox_virtual_environment_vm" "talos_cp_01" {
+  vm_id       = var.start_vm_id
   name        = "talos-cp-01"
   description = "Managed by Terraform"
   tags        = ["terraform"]
@@ -28,12 +29,11 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
 
   disk {
     datastore_id = "fast"
-    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
+    file_id      = proxmox_download_file.talos_nocloud_image.id
     file_format  = "raw"
     interface    = "virtio0"
     size         = 20
   }
-
   operating_system {
     type = "l26" # Linux Kernel 2.6 - 5.X.
   }
@@ -55,6 +55,7 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
 resource "proxmox_virtual_environment_vm" "talos_worker" {
   count       = length(local.worker_ips)
   depends_on  = [proxmox_virtual_environment_vm.talos_cp_01]
+  vm_id       = var.start_vm_id + count.index + 3
   name        = format("talos-worker-%02d", count.index + 1)
   description = "Managed by Terraform"
   tags        = ["terraform"]
@@ -80,11 +81,17 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
 
   disk {
     datastore_id = "fast"
-    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
+    file_id      = proxmox_download_file.talos_nocloud_image.id
     file_format  = "raw"
     interface    = "virtio0"
     size         = 20
   }
+  # disk {
+  #   datastore_id = "Synology-iSCSI-Vol"
+  #   file_format  = "raw"
+  #   interface    = "virtio1"
+  #   size         = var.talos_worker_data_disk_size
+  # }
 
   operating_system {
     type = "l26" # Linux Kernel 2.6 - 5.X.
@@ -103,4 +110,3 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
     }
   }
 }
-
