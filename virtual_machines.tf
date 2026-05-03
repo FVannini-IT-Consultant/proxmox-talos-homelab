@@ -2,9 +2,10 @@ locals {
   worker_ips = var.talos_worker_ips
 }
 
-resource "proxmox_virtual_environment_vm" "talos_cp_01" {
-  vm_id       = var.start_vm_id
-  name        = "talos-cp-01"
+resource "proxmox_virtual_environment_vm" "talos_cp" {
+  count       = length(var.talos_cp_ips)
+  vm_id       = var.start_vm_id + count.index
+  name        = format("talos-cp-%02d", count.index + 1)
   description = "Managed by Terraform"
   tags        = ["terraform"]
   node_name   = "prox3"
@@ -42,7 +43,7 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
     datastore_id = "fast"
     ip_config {
       ipv4 {
-        address = "${var.talos_cp_01_ip_addr}/24"
+        address = "${var.talos_cp_ips[count.index]}/24"
         gateway = var.default_gateway
       }
       ipv6 {
@@ -54,7 +55,7 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
 
 resource "proxmox_virtual_environment_vm" "talos_worker" {
   count       = length(local.worker_ips)
-  depends_on  = [proxmox_virtual_environment_vm.talos_cp_01]
+  depends_on  = [proxmox_virtual_environment_vm.talos_cp]
   vm_id       = var.start_vm_id + count.index + 3
   name        = format("talos-worker-%02d", count.index + 1)
   description = "Managed by Terraform"
